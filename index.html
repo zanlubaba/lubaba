@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PadletTree – Bảng ghim ảnh phân cấp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{--bg:#F4F6FA;--panel:#fff;--line:#E2E8F0;--tx:#0F172A;--tx2:#64748B;--ac:#6366F1;--ach:#4F46E5;--ok:#10B981;--bad:#EF4444;--hov:#EEF2FF}
+html.dark{--bg:#0B0F19;--panel:#131A2A;--line:#1E293B;--tx:#F8FAFC;--tx2:#94A3B8;--hov:#1B2440}
+*{box-sizing:border-box}
+html,body{height:100%;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Be Vietnam Pro',sans-serif;font-size:14px}
+h1,h2,h3,.hd{font-family:'Plus Jakarta Sans','Be Vietnam Pro',sans-serif}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:0}
+input,textarea,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%;outline:none}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-weight:500;transition:.15s}
+.btn:hover{background:var(--hov)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}.btn.pri:hover{background:var(--ach)}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.ico{width:32px;height:32px;display:inline-grid;place-items:center;border-radius:9px}.ico:hover{background:var(--hov)}
+.i16{width:16px;height:16px}
+#side{position:fixed;inset:0 auto 0 0;width:300px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:40;transition:transform .25s}
+@media(max-width:1023px){#side{transform:translateX(-100%)}#side.open{transform:none;box-shadow:0 0 40px #0006}}
+@media(min-width:1024px){#main{margin-left:300px}#menuBtn,#scrim{display:none!important}}
+#scrim{position:fixed;inset:0;background:#0006;z-index:39}
+.row{display:flex;align-items:center;gap:4px;padding:5px 8px;border-radius:10px;cursor:pointer}
+.row:hover{background:var(--hov)}.row.sel{background:var(--hov);color:var(--ac);font-weight:600}
+.row .acts{display:none;gap:0}.row:hover .acts{display:flex}
+@media(hover:none){.row .acts{display:flex}}
+.chev{transition:transform .15s}.chev.open{transform:rotate(90deg)}
+.cnt{font-size:11px;color:var(--tx2);margin-left:auto;padding-left:6px}
+.row:hover .cnt{display:none}@media(hover:none){.row .cnt{display:none}}
+#board.wall{column-width:260px;column-gap:16px}
+#board.wall .card{break-inside:avoid;margin-bottom:16px}
+#board.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+#board.grid .card img{aspect-ratio:4/3;object-fit:cover}
+#board.stream{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 1px 3px #0f172a10;transition:transform .2s,box-shadow .2s;cursor:pointer}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 24px #0f172a1a}
+.card img{width:100%;display:block}
+.card .bar{position:absolute;top:8px;right:8px;display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:2px;opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .2s}
+.card:hover .bar,.card:focus-within .bar{opacity:1;transform:none}
+@media(hover:none){.card .bar{opacity:1;transform:none}}
+.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--tx2);background:var(--bg);border-radius:99px;padding:2px 8px;max-width:100%}
+.qp{border:2px dashed var(--line);border-radius:16px;padding:22px;text-align:center;color:var(--tx2);cursor:pointer;transition:.15s}
+.qp:hover{border-color:var(--ac);color:var(--ac);background:var(--hov)}
+#board.wall .qp{break-inside:avoid;margin-bottom:16px}
+#ov{position:fixed;inset:0;z-index:70;background:#6366f155;border:4px dashed var(--ac);display:none;place-items:center;pointer-events:none;font-size:22px;font-weight:700;color:var(--ac);backdrop-filter:blur(2px)}
+#modal,#lb{position:fixed;inset:0;z-index:60;background:#020617b0;display:none;align-items:center;justify-content:center;padding:16px}
+#modal.show,#lb.show{display:flex}
+.dlg{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;max-height:92vh;overflow:auto;padding:20px;animation:pop .18s}
+@keyframes pop{from{opacity:0;transform:scale(.96)}}
+.lbx{background:var(--panel);border-radius:16px;width:100%;max-width:1080px;max-height:94vh;overflow:auto;display:grid;grid-template-columns:1.4fr 1fr}
+@media(max-width:800px){.lbx{grid-template-columns:1fr}}
+.lbx .pic{background:#000;display:grid;place-items:center;min-height:200px}
+.lbx .pic img{max-width:100%;max-height:80vh;object-fit:contain}
+.nav{position:fixed;top:50%;transform:translateY(-50%);background:#fff;color:#0F172A;width:42px;height:42px;border-radius:99px;display:grid;place-items:center;z-index:65}
+#toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:500;animation:pop .2s;box-shadow:0 8px 20px #0004}
+label.lb{display:block;font-weight:600;font-size:12px;margin:12px 0 5px;color:var(--tx2)}
+.sw{width:26px;height:26px;border-radius:99px;border:3px solid transparent}.sw.on{border-color:var(--tx)}
+.ic{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);font-size:17px}.ic.on{background:var(--hov);border-color:var(--ac)}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="scrim" class="hidden" onclick="toggleSide(false)"></div>
+<aside id="side" aria-label="Cây thư mục">
+  <div class="p-4 pb-2 flex items-center gap-2">
+    <div class="w-9 h-9 rounded-xl grid place-items-center text-white" style="background:var(--ac)"><i data-lucide="git-branch" class="i16"></i></div>
+    <h1 class="hd text-lg font-extrabold">PadletTree</h1>
+  </div>
+  <div class="px-4 py-2"><button class="btn pri w-full justify-center" onclick="folderModal(null,null)"><i data-lucide="folder-plus" class="i16"></i>Tạo thư mục gốc</button></div>
+  <nav class="flex-1 overflow-y-auto px-2 pb-2" id="tree"></nav>
+  <div class="p-3 border-t flex gap-2" style="border-color:var(--line)">
+    <button class="btn flex-1 justify-center text-xs" onclick="seedSample()"><i data-lucide="rotate-ccw" class="i16"></i>Khôi phục mẫu</button>
+    <button class="btn flex-1 justify-center text-xs" onclick="clearSample()"><i data-lucide="eraser" class="i16"></i>Xóa mẫu</button>
+  </div>
+</aside>
+
+<div id="main" class="min-h-full flex flex-col">
+  <header class="sticky top-0 z-30 px-4 py-3 border-b" style="background:var(--panel);border-color:var(--line)">
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="menuBtn" class="ico" onclick="toggleSide(true)" aria-label="Mở menu"><i data-lucide="menu"></i></button>
+      <nav id="crumb" class="flex items-center flex-wrap gap-1 text-sm flex-1 min-w-0" aria-label="Đường dẫn"></nav>
+      <button class="ico" id="themeBtn" onclick="toggleTheme()" aria-label="Đổi giao diện"><i data-lucide="moon"></i></button>
+      <button class="btn pri" onclick="postModal()"><i data-lucide="plus" class="i16"></i>Đăng thẻ mới</button>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap mt-3">
+      <div class="relative flex-1 min-w-[180px]">
+        <i data-lucide="search" class="i16 absolute left-3 top-3" style="color:var(--tx2)"></i>
+        <input id="q" placeholder="Tìm theo tiêu đề, ghi chú, tên ảnh…" style="padding-left:36px" oninput="state.q=this.value;render()">
+      </div>
+      <label class="btn text-xs" id="subWrap"><input type="checkbox" id="subChk" style="width:auto" onchange="state.sub=this.checked;savePref();render()">Gồm thư mục con</label>
+      <button class="btn text-xs" id="addSub" onclick="folderModal(null,state.sel)"><i data-lucide="folder-plus" class="i16"></i>Tạo thư mục con tại đây</button>
+<div class="flex rounded-xl border overflow-hidden" style="border-color:var(--line)" role="group" aria-label="Bố cục">
+        <button class="ico" style="border-radius:0" data-lay="wall" onclick="setLayout('wall')" title="Tường (Wall)"><i data-lucide="layout-dashboard" class="i16"></i></button>
+        <button class="ico" style="border-radius:0" data-lay="grid" onclick="setLayout('grid')" title="Lưới đều (Grid)"><i data-lucide="layout-grid" class="i16"></i></button>
+        <button class="ico" style="border-radius:0" data-lay="stream" onclick="setLayout('stream')" title="Dòng (Stream)"><i data-lucide="rows-3" class="i16"></i></button>
+      </div>
+    </div>
+  </header>
+  <main class="flex-1 p-4 md:p-6"><div id="board" class="wall"></div><div id="empty" class="hidden text-center py-16" style="color:var(--tx2)"></div></main>
+</div>
+
+<div id="ov">Thả ảnh để tạo thẻ mới</div>
+<div id="modal"></div>
+<div id="lb"></div>
+<div id="toasts" aria-live="polite"></div>
+<input type="file" id="fileIn" accept="image/*" multiple class="hidden">
+
+<script>
+/* ============ 0. TIỆN ÍCH & TRẠNG THÁI ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').r
