@@ -1,181 +1,363 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PadletTree</title>
+<style>
+:root{--bg:#f6f7fb;--pn:#fff;--tx:#1e2230;--tx2:#667085;--bd:#e4e7ee;--hov:#eceffa;--pri:#4f46e5;--prt:#fff;--bad:#dc2626;color-scheme:light}
+:root.dark{--bg:#0f1117;--pn:#181b24;--tx:#e8eaf0;--tx2:#98a2b3;--bd:#2a2f3c;--hov:#242938;--pri:#6366f1;--bad:#f87171;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{font:14px/1.45 system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--pn);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+header .sp{flex:1}.brand{font-weight:700;font-size:16px}
+.btn{border:1px solid var(--bd);background:var(--pn);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn:hover,.btn.on{background:var(--hov)}.pri{background:var(--pri);border-color:var(--pri);color:var(--prt)}.pri:hover{filter:brightness(1.1);background:var(--pri)}.bad{color:var(--bad)}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+#q{width:200px}#subChk{width:auto}.chk{display:flex;gap:4px;align-items:center;color:var(--tx2);cursor:pointer}
+#menuBtn{display:none}
+details{position:relative}summary{list-style:none}summary::-webkit-details-marker{display:none}
+.pop{position:absolute;right:0;top:110%;background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:6px;z-index:25;display:flex;flex-direction:column;min-width:210px;box-shadow:0 8px 24px #0003}
+.pop .btn{border:0;text-align:left}
+#app{flex:1;display:flex;min-height:0}
+#side{width:260px;overflow:auto;background:var(--pn);border-right:1px solid var(--bd);padding:8px;flex:none}
+main{flex:1;overflow:auto;padding:12px;min-width:0}
+#scrim{display:none}
+.row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;cursor:pointer}
+.row:hover,.row.sel{background:var(--hov)}.row.sel{font-weight:600}
+.row .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cnt{color:var(--tx2);font-size:12px}.acts{display:none;gap:2px}.row:hover .acts{display:flex}
+.chev{border:0;background:none;cursor:pointer;width:16px;transition:.15s}.chev.open{transform:rotate(90deg)}
+.ico{border:0;background:none;cursor:pointer;padding:2px 5px;border-radius:6px}.ico:hover{background:var(--bd)}
+#crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;color:var(--tx2)}
+#crumb .btn{padding:4px 10px}
+#board.wall{column-width:220px;column-gap:12px}
+#board.wall>*{break-inside:avoid;margin-bottom:12px}
+#board.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+#board.grid .card img{aspect-ratio:1;object-fit:cover}
+#board.list{display:flex;flex-direction:column;gap:8px}
+#board.list .card{display:flex}#board.list .card img{width:130px;height:96px;object-fit:cover;flex:none}
+.card{position:relative;background:var(--pn);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;content-visibility:auto;contain-intrinsic-size:auto 260px}
+.card:hover,.card:focus-visible{border-color:var(--pri);outline:0}
+.card img{display:block;width:100%;height:auto;background:var(--hov)}
+.cb{padding:10px}.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--tx2);margin-top:4px}
+.bar{position:absolute;top:6px;right:6px;display:none;gap:4px}.card:hover .bar,.card:focus-within .bar{display:flex}
+.bar .ico{background:#000a;color:#fff}
+.chip{display:inline-block;margin-top:8px;padding:2px 8px;border-radius:99px;background:var(--hov);color:var(--tx2);font-size:12px}
+.qp{border:2px dashed var(--bd);border-radius:12px;padding:22px;text-align:center;color:var(--tx2);cursor:pointer}.qp:hover{border-color:var(--pri)}
+#empty{text-align:center;color:var(--tx2);padding:60px 0}
+#modal,#lb{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:16px;background:#0008;z-index:50}
+#lb{background:#000d;z-index:40}#modal.show,#lb.show{display:flex}
+.dlg{background:var(--pn);border-radius:14px;padding:18px;width:min(440px,100%);max-height:92vh;overflow:auto}
+.dlg h2{margin:0 0 6px;font-size:18px}.lb{display:block;margin:12px 0 4px;color:var(--tx2);font-size:12px}
+.ics{display:flex;flex-wrap:wrap;gap:6px}.ic{width:36px;height:36px;border:1px solid var(--bd);background:var(--pn);border-radius:8px;cursor:pointer;font-size:18px}.ic.on{border-color:var(--pri);background:var(--hov)}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.lbx{display:grid;grid-template-columns:minmax(0,1fr) 300px;background:var(--pn);border-radius:14px;overflow:hidden;width:min(1000px,100%);max-height:92vh}
+.pic{background:#000;display:flex;align-items:center;justify-content:center;min-height:200px}.pic img{max-width:100%;max-height:92vh;object-fit:contain}
+.info{padding:18px;display:flex;flex-direction:column;gap:8px;overflow:auto}.info h2{margin:0}.info .foot{margin-top:auto;justify-content:flex-start;flex-wrap:wrap}
+.nav{position:fixed;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:0;background:#fff3;color:#fff;font-size:26px;cursor:pointer;z-index:41}.nav:hover{background:#fff6}
+#ov{position:fixed;inset:0;background:#4f46e5cc;color:#fff;display:none;place-items:center;font-size:22px;z-index:60;pointer-events:none}
+#toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:70;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:#111e;color:#fff;padding:8px 14px;border-radius:10px}
+@media(hover:none){.acts,.bar{display:flex}}
+@media(max-width:760px){
+#menuBtn{display:inline-block}#q{width:130px}
+#side{position:fixed;inset:0 auto 0 0;z-index:30;transform:translateX(-100%);transition:transform .2s;width:280px}#side.open{transform:none}
+#scrim.show{display:block;position:fixed;inset:0;background:#0006;z-index:20}
+.lbx{grid-template-columns:1fr;overflow:auto}.nav{top:auto;bottom:16px;transform:none}
+}
+</style>
+</head>
+<body>
+<header>
+<button class="btn" id="menuBtn" data-a="menu" aria-label="Thư mục">☰</button>
+<span class="brand">🌳 PadletTree</span>
+<input id="q" type="search" placeholder="Tìm kiếm…" aria-label="Tìm kiếm">
+<label class="chk"><input type="checkbox" id="subChk">Gồm thư mục con</label>
+<span class="sp"></span>
+<button class="btn" data-a="lay" data-lay="wall" title="Dạng tường">▦</button>
+<button class="btn" data-a="lay" data-lay="grid" title="Dạng lưới">▤</button>
+<button class="btn" data-a="lay" data-lay="list" title="Dạng danh sách">☰</button>
+<button class="btn" data-a="fnew" title="Tạo thư mục gốc">＋ Thư mục</button>
+<button class="btn pri" data-a="pnew">Đăng thẻ mới</button>
+<details><summary class="btn">⋯</summary><div class="pop">
+<button class="btn" data-a="export">⬇ Xuất sao lưu (JSON)</button>
+<button class="btn" data-a="import">⬆ Nhập sao lưu</button>
+<button class="btn" data-a="sample">✨ Khôi phục dữ liệu mẫu</button>
+<button class="btn" data-a="nosample">🧹 Xóa dữ liệu mẫu</button>
+</div></details>
+<button class="btn" id="themeBtn" data-a="theme" aria-label="Đổi giao diện"></button>
+</header>
+<div id="app">
+<aside id="side"><div id="tree"></div></aside>
+<div id="scrim" data-a="scrim"></div>
+<main><div id="crumb"></div><div id="board" class="wall"></div><div id="empty" hidden></div></main>
+</div>
+<div id="modal"></div><div id="lb"></div>
+<div id="ov">Thả ảnh vào đây để thêm</div><div id="toasts"></div>
+<input type="file" id="fileIn" accept="image/*" multiple hidden>
+<input type="file" id="impIn" accept="application/json,.json" hidden>
+
 <script>
-/* ============ 0. TIỆN ÍCH & TRẠNG THÁI ============ */
+/* ===== 0. Tiện ích & trạng thái ===== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nz=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase();
-const uid=()=>Math.random().toString(36).slice(2,9);
-const KEY='padlettree.v1';
-const ICONS=['📁','✈️','🍜','🎨','📷','🏠','🌿','🎵','📚','⭐','💼','🎮'];
-let db={folders:[],cards:[],open:{}};
-const state={sel:null,q:'',sub:false,layout:'wall',dark:false};
-let pending=[],editing=null,lbList=[],lbI=0;
+const uid=()=>crypto.randomUUID?crypto.randomUUID().replace(/-/g,'').slice(0,10):Math.random().toString(36).slice(2,12);
+const PK='padlettree.p',OLD='padlettree.v1',SEEDED='padlettree.seeded',ICONS=['📁','✈️','🍜','🎨','📷','🏠','🌿','🎵','📚','⭐','💼','🎮'];
+const kOf=c=>nz((c.title||'')+' '+(c.note||'')+' '+(c.name||''));
+let D,folders=[],cards=[],openF={},pending=[],editing=null,lbList=[],lbI=0,lbTok=0,lbUrl=null,tmpU=[],lim=60,qT,md=null,dc=0,kids,cnt,fm;
+const st={sel:null,q:'',sub:false,layout:'wall',dark:false},U=new Map();
+const turl=c=>{if(!c.thumb)return'';let u=U.get(c.id);if(!u){u=URL.createObjectURL(c.thumb);U.set(c.id,u)}return u};
+const drop=id=>{const u=U.get(id);if(u){URL.revokeObjectURL(u);U.delete(id)}};
+const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),2400)};
+const fail=()=>toast('Không lưu được – bộ nhớ trình duyệt có thể đã đầy');
 
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.folders)db=d;const p=JSON.parse(localStorage.getItem(KEY+'.p'));if(p)Object.assign(state,p,{q:''})}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('Bộ nhớ trình duyệt đã đầy – hãy xóa bớt ảnh')}}
-function savePref(){try{localStorage.setItem(KEY+'.p',JSON.stringify({sel:state.sel,sub:state.sub,layout:state.layout,dark:state.dark}))}catch(e){}}
-function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),2200)}
+function loadPref(){
+  try{const p=JSON.parse(localStorage.getItem(PK)||localStorage.getItem(OLD+'.p'));
+    if(p){if(typeof p.sel==='string')st.sel=p.sel;st.sub=!!p.sub;if(['wall','grid','list'].includes(p.layout))st.layout=p.layout;
+      if(typeof p.dark==='boolean')st.dark=p.dark;else st.dark=matchMedia('(prefers-color-scheme: dark)').matches;
+      if(p.open&&typeof p.open==='object')openF=p.open;return}}catch(e){}
+  st.dark=matchMedia('(prefers-color-scheme: dark)').matches}
+const savePref=()=>{try{localStorage.setItem(PK,JSON.stringify({sel:st.sel,sub:st.sub,layout:st.layout,dark:st.dark,open:openF}))}catch(e){}};
 
-const desc=id=>db.folders.filter(f=>f.parent===id).flatMap(f=>[f.id,...desc(f.id)]);
-const fname=id=>(db.folders.find(f=>f.id===id)||{}).name||'';
-const countIn=id=>{const ids=[id,...desc(id)];return db.cards.filter(c=>ids.includes(c.folder)).length};
-function flat(pid=null,d=0){return db.folders.filter(f=>f.parent===pid).flatMap(f=>[{f,d},...flat(f.id,d+1)])}
-function path(id){const p=[];let f=db.folders.find(x=>x.id===id);while(f){p.unshift(f);const pr=f.parent;f=db.folders.find(x=>x.id===pr)}return p}
+/* ===== 1. IndexedDB: folders | cards (kèm thumbnail) | blobs (ảnh đầy đủ) ===== */
+const idb=()=>new Promise((ok,no)=>{const r=indexedDB.open('padlettree',1);
+  r.onupgradeneeded=()=>['folders','cards','blobs'].forEach(s=>r.result.createObjectStore(s,{keyPath:'id'}));
+  r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const R=(s,k)=>new Promise((ok,no)=>{const o=D.transaction(s).objectStore(s),r=k===undefined?o.getAll():o.get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const W=ops=>new Promise((ok,no)=>{if(!ops.length)return ok();
+  const t=D.transaction([...new Set(ops.map(o=>o[0]))],'readwrite');
+  ops.forEach(([s,m,v])=>t.objectStore(s)[m](v));t.oncomplete=ok;t.onerror=t.onabort=()=>no(t.error)});
 
-/* ============ 1. HIỂN THỊ ============ */
-function render(){renderTree();renderCrumb();renderBoard();syncUI();window.lucide&&lucide.createIcons()}
+/* ===== 2. Chỉ mục (đếm thẻ 1 lượt, không đệ quy lặp) ===== */
+function index(){
+  kids=new Map();cnt=new Map();fm=new Map(folders.map(f=>[f.id,f]));
+  for(const f of folders){const k=f.parent||'';if(!kids.has(k))kids.set(k,[]);kids.get(k).push(f)}
+  const own=new Map();for(const c of cards)own.set(c.folder,(own.get(c.folder)||0)+1);
+  const sum=id=>{let n=own.get(id)||0;for(const f of kids.get(id)||[])n+=sum(f.id);cnt.set(id,n);return n};
+  (kids.get('')||[]).forEach(f=>sum(f.id))}
+const desc=id=>(kids.get(id)||[]).flatMap(f=>[f.id,...desc(f.id)]);
+const flat=(p='',d=0)=>(kids.get(p)||[]).flatMap(f=>[{f,d},...flat(f.id,d+1)]);
+const fname=id=>(fm.get(id)||{}).name||'';
+const path=id=>{const p=[];let f=fm.get(id),n=0;while(f&&n++<50){p.unshift(f);f=fm.get(f.parent)}return p};
 
-function treeHTML(pid,d){return db.folders.filter(f=>f.parent===pid).map(f=>{
-  const k=db.folders.some(x=>x.parent===f.id),o=db.open[f.id];
-  return `<div><div class="row ${state.sel===f.id?'sel':''}" style="padding-left:${8+d*14}px" onclick="selectFolder('${f.id}')">
-  <button class="chev ${o?'open':''}" style="width:16px;visibility:${k?'visible':'hidden'}" onclick="event.stopPropagation();toggleOpen('${f.id}')">›</button>
-  <span>${esc(f.icon||'📁')}</span><span class="truncate" style="flex:1">${esc(f.name)}</span><span class="cnt">${countIn(f.id)}</span>
-  <span class="acts"><button class="ico" title="Tạo thư mục con" onclick="event.stopPropagation();folderModal(null,'${f.id}')">＋</button><button class="ico" title="Sửa" onclick="event.stopPropagation();folderModal('${f.id}')">✎</button><button class="ico" title="Xóa" onclick="event.stopPropagation();delFolder('${f.id}')">🗑</button></span></div>
+/* ===== 3. Hiển thị ===== */
+function render(){index();renderTree();renderCrumb();renderBoard();syncUI()}
+function treeHTML(pid,d){return(kids.get(pid)||[]).map(f=>{const k=kids.has(f.id),o=openF[f.id];
+  return`<div><div class="row ${st.sel===f.id?'sel':''}" style="padding-left:${8+d*14}px" data-a="sel" data-id="${f.id}">
+  <button class="chev ${o?'open':''}" style="visibility:${k?'visible':'hidden'}" data-a="tog" data-id="${f.id}" aria-label="Mở/đóng">›</button>
+  <span>${esc(f.icon||'📁')}</span><span class="t">${esc(f.name)}</span><span class="cnt">${cnt.get(f.id)||0}</span>
+  <span class="acts"><button class="ico" title="Tạo thư mục con" data-a="fnew" data-id="${f.id}">＋</button><button class="ico" title="Sửa" data-a="fedit" data-id="${f.id}">✎</button><button class="ico" title="Xóa" data-a="fdel" data-id="${f.id}">🗑</button></span></div>
   ${o&&k?treeHTML(f.id,d+1):''}</div>`}).join('')}
-function renderTree(){$('#tree').innerHTML=`<div class="row ${!state.sel?'sel':''}" onclick="selectFolder(null)"><span style="width:16px"></span><span>🏠</span><span style="flex:1">Tất cả thẻ</span><span class="cnt" style="display:block">${db.cards.length}</span></div>`+treeHTML(null,0)}
-function renderCrumb(){$('#crumb').innerHTML=`<button class="btn" style="padding:4px 10px" onclick="selectFolder(null)">🏠 Tất cả</button>`+path(state.sel).map(x=>`<span style="color:var(--tx2)">/</span><button class="btn" style="padding:4px 10px" onclick="selectFolder('${x.id}')">${esc(x.icon||'📁')} ${esc(x.name)}</button>`).join('')}
-
+function renderTree(){$('#tree').innerHTML=`<div class="row ${st.sel?'':'sel'}" data-a="sel" data-id=""><span style="width:16px"></span><span>🏠</span><span class="t">Tất cả thẻ</span><span class="cnt">${cards.length}</span></div>`+treeHTML('',0)}
+function renderCrumb(){$('#crumb').innerHTML=`<button class="btn" data-a="sel" data-id="">🏠 Tất cả</button>`+path(st.sel).map(x=>`<span>/</span><button class="btn" data-a="sel" data-id="${x.id}">${esc(x.icon||'📁')} ${esc(x.name)}</button>`).join('')}
 function vis(){
-  let ids=null;if(state.sel)ids=state.sub?[state.sel,...desc(state.sel)]:[state.sel];
-  const q=nz(state.q.trim());
-  return db.cards.filter(c=>(!ids||ids.includes(c.folder))&&(!q||nz(c.title+' '+c.note+' '+c.name).includes(q))).sort((a,b)=>b.t-a.t)}
+  const ids=st.sel?new Set(st.sub?[st.sel,...desc(st.sel)]:[st.sel]):null,q=nz(st.q.trim());
+  return cards.filter(c=>(!ids||ids.has(c.folder))&&(!q||c.k.includes(q))).sort((a,b)=>b.t-a.t)}
+const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){lim+=60;renderBoard()}},{rootMargin:'500px'});
 function renderBoard(){
-  const b=$('#board'),list=vis();b.className=state.layout;
-  const qp=state.sel?`<div class="qp" onclick="$('#fileIn').click()"><div style="font-size:24px">＋</div>Thêm ảnh vào thư mục này</div>`:'';
-  b.innerHTML=qp+list.map((c,i)=>`<article class="card" tabindex="0" onclick="openLb(${i})" onkeydown="if(event.key==='Enter')openLb(${i})">
-  ${c.img?`<img src="${c.img}" alt="${esc(c.title)}" loading="lazy">`:''}
-  <div class="bar"><button class="ico" title="Sửa" onclick="event.stopPropagation();postModal('${c.id}')">✎</button><button class="ico" title="Xóa" onclick="event.stopPropagation();delCard('${c.id}')">🗑</button></div>
-  <div class="p-3"><div class="hd font-bold">${esc(c.title)}</div>${c.note?`<div class="clamp mt-1" style="color:var(--tx2)">${esc(c.note)}</div>`:''}
-  <div class="mt-2"><span class="chip">📁 ${esc(fname(c.folder))}</span></div></div></article>`).join('');
-  const e=$('#empty');e.classList.toggle('hidden',!!list.length);
-  e.innerHTML=state.q?'Không tìm thấy thẻ phù hợp.':'Chưa có thẻ nào. Bấm “Đăng thẻ mới” hoặc kéo ảnh vào đây.'}
+  const b=$('#board'),list=vis();b.className=st.layout;
+  b.innerHTML=(st.sel?`<div class="qp" data-a="pick">＋<br>Thêm ảnh vào thư mục này</div>`:'')+list.slice(0,lim).map(c=>
+  `<article class="card" tabindex="0" data-a="open" data-id="${c.id}">${c.thumb?`<img src="${turl(c)}" width="${c.w||4}" height="${c.h||3}" alt="${esc(c.title)}" loading="lazy" decoding="async">`:''}
+  <div class="bar"><button class="ico" title="Sửa" data-a="cedit" data-id="${c.id}">✎</button><button class="ico" title="Xóa" data-a="cdel" data-id="${c.id}">🗑</button></div>
+  <div class="cb"><b>${esc(c.title)}</b>${c.note?`<div class="clamp">${esc(c.note)}</div>`:''}<span class="chip">📁 ${esc(fname(c.folder))}</span></div></article>`).join('')
+  +(list.length>lim?'<div id="more" style="height:1px"></div>':'');
+  const e=$('#empty');e.hidden=!!list.length;e.textContent=st.q?'Không tìm thấy thẻ phù hợp.':'Chưa có thẻ nào. Bấm “Đăng thẻ mới” hoặc kéo ảnh vào đây.';
+  const m=$('#more');if(m)io.observe(m)}
 function syncUI(){
-  $('#subChk').checked=state.sub;$('#addSub').style.display=state.sel?'':'none';
-  document.querySelectorAll('[data-lay]').forEach(b=>b.style.background=b.dataset.lay===state.layout?'var(--hov)':'');
-  $('#themeBtn').innerHTML=`<i data-lucide="${state.dark?'sun':'moon'}"></i>`}
+  $('#subChk').checked=st.sub;
+  document.querySelectorAll('[data-lay]').forEach(b=>b.classList.toggle('on',b.dataset.lay===st.layout));
+  $('#themeBtn').textContent=st.dark?'☀️':'🌙'}
 
-/* ============ 2. ĐIỀU HƯỚNG ============ */
-function toggleSide(o){$('#side').classList.toggle('open',o);$('#scrim').classList.toggle('hidden',!o)}
-function toggleTheme(){state.dark=!state.dark;document.documentElement.classList.toggle('dark',state.dark);savePref();render()}
-function setLayout(l){state.layout=l;savePref();render()}
-function toggleOpen(id){db.open[id]=!db.open[id];save();render()}
-function selectFolder(id){state.sel=id;if(id)db.open[id]=true;savePref();save();toggleSide(false);render()}
+/* ===== 4. Điều hướng ===== */
+const toggleSide=o=>{$('#side').classList.toggle('open',o);$('#scrim').classList.toggle('show',o)};
+function toggleTheme(){st.dark=!st.dark;document.documentElement.classList.toggle('dark',st.dark);savePref();syncUI()}
+function selectFolder(id){st.sel=id;lim=60;if(id)openF[id]=true;savePref();toggleSide(false);render();$('main').scrollTop=0}
 
-/* ============ 3. MODAL CHUNG ============ */
-function openModal(h){const m=$('#modal');m.innerHTML=h;m.classList.add('show')}
-function closeModal(){$('#modal').classList.remove('show');$('#modal').innerHTML='';pending=[];editing=null}
-
-/* ============ 4. THƯ MỤC ============ */
+/* ===== 5. Modal & thư mục ===== */
+const openModal=h=>{$('#modal').innerHTML=h;$('#modal').classList.add('show')};
+function closeModal(){$('#modal').classList.remove('show');$('#modal').innerHTML='';tmpU.forEach(u=>URL.revokeObjectURL(u));tmpU=[];pending=[];editing=null}
 function folderModal(id,parent){
-  const f=id&&db.folders.find(x=>x.id===id),ic=f?f.icon:'📁';
-  openModal(`<div class="dlg"><h2 class="hd text-lg font-bold">${f?'Sửa thư mục':parent?'Tạo thư mục con':'Tạo thư mục gốc'}</h2>
-  ${parent&&!f?`<div class="chip mt-2">trong: ${esc(fname(parent))}</div>`:''}
-  <label class="lb">Tên thư mục</label><input id="fn" value="${esc(f?f.name:'')}" onkeydown="if(event.key==='Enter')saveFolder('${id||''}','${parent||''}')">
-  <label class="lb">Biểu tượng</label><div class="flex flex-wrap gap-2" id="fic">${ICONS.map(e=>`<button class="ic ${e===ic?'on':''}" onclick="document.querySelectorAll('#fic .ic').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${e}</button>`).join('')}</div>
-  <div class="flex justify-end gap-2 mt-4"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn pri" onclick="saveFolder('${id||''}','${parent||''}')">Lưu</button></div></div>`);
+  const f=id&&fm.get(id),ic=f?f.icon:'📁';
+  openModal(`<div class="dlg"><h2>${f?'Sửa thư mục':parent?'Tạo thư mục con':'Tạo thư mục gốc'}</h2>${parent&&!f?`<span class="chip">trong: ${esc(fname(parent))}</span>`:''}
+  <label class="lb">Tên thư mục</label><input id="fn" value="${esc(f?f.name:'')}">
+  <label class="lb">Biểu tượng</label><div class="ics" id="fic">${ICONS.map(e=>`<button class="ic ${e===ic?'on':''}" data-a="ic">${e}</button>`).join('')}</div>
+  <div class="foot"><button class="btn" data-a="mclose">Hủy</button><button class="btn pri" data-a="fsave" data-id="${id||''}" data-p="${parent||''}">Lưu</button></div></div>`);
   setTimeout(()=>$('#fn')&&$('#fn').focus(),30)}
-function saveFolder(id,parent){
-  const name=$('#fn').value.trim();if(!name){toast('Hãy nhập tên thư mục');return}
-  const ic=($('#fic .on')||{}).textContent||'📁';
-  if(id){const f=db.folders.find(x=>x.id===id);f.name=name;f.icon=ic}
-  else{const n={id:uid(),name,icon:ic,parent:parent||null};db.folders.push(n);if(parent)db.open[parent]=true;state.sel=n.id}
-  save();savePref();closeModal();render();toast('Đã lưu thư mục')}
-function delFolder(id){
-  const ids=[id,...desc(id)],n=db.cards.filter(c=>ids.includes(c.folder)).length;
-  if(!confirm(`Xóa thư mục này${ids.length>1?` và ${ids.length-1} thư mục con`:''}${n?`, cùng ${n} thẻ bên trong`:''}?`))return;
-  const par=(db.folders.find(f=>f.id===id)||{}).parent||null;
-  db.folders=db.folders.filter(f=>!ids.includes(f.id));db.cards=db.cards.filter(c=>!ids.includes(c.folder));
-  if(ids.includes(state.sel))state.sel=par;save();savePref();render();toast('Đã xóa thư mục')}
+async function saveFolder(id,parent){
+  const name=$('#fn').value.trim();if(!name)return toast('Hãy nhập tên thư mục');
+  const icon=($('#fic .on')||{}).textContent||'📁';
+  try{if(id){const f=fm.get(id);if(!f)return closeModal();await W([['folders','put',{...f,name,icon}]]);Object.assign(f,{name,icon})}
+    else{const f={id:uid(),name,icon,parent:parent||null};await W([['folders','put',f]]);folders.push(f);if(parent)openF[parent]=true;st.sel=f.id}
+  }catch(e){return fail()}
+  savePref();closeModal();render();toast('Đã lưu thư mục')}
+async function delFolder(id){
+  const ids=[id,...desc(id)],set=new Set(ids),del=cards.filter(c=>set.has(c.folder));
+  if(!confirm(`Xóa thư mục này${ids.length>1?` và ${ids.length-1} thư mục con`:''}${del.length?`, cùng ${del.length} thẻ bên trong`:''}?`))return;
+  const par=(fm.get(id)||{}).parent||null;
+  try{await W([...ids.map(i=>['folders','delete',i]),...del.flatMap(c=>[['cards','delete',c.id],['blobs','delete',c.id]])])}catch(e){return fail()}
+  del.forEach(c=>drop(c.id));folders=folders.filter(f=>!set.has(f.id));cards=cards.filter(c=>!set.has(c.folder));
+  ids.forEach(i=>delete openF[i]);if(set.has(st.sel))st.sel=par;savePref();render();toast('Đã xóa thư mục')}
 
-/* ============ 5. THẺ ẢNH ============ */
-function readImg(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();
-  im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res({img:c.toDataURL('image/jpeg',.8),name:file.name})};
-  im.onerror=()=>res(null);im.src=r.result};r.onerror=()=>res(null);r.readAsDataURL(file)})}
+/* ===== 6. Ảnh: tạo thumbnail 420px + bản đầy đủ 1600px (WebP) ===== */
+const enc=(c,q)=>new Promise(ok=>c.toBlob(b=>b&&b.type==='image/webp'?ok(b):c.toBlob(ok,'image/jpeg',q),'image/webp',q));
+async function proc(blob){
+  const u=URL.createObjectURL(blob);
+  try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=u});
+    const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(!w||!h)throw 0;
+    const mk=m=>{const k=Math.min(1,m/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);return enc(c,.8)};
+    return{w,h,thumb:await mk(420),full:await mk(1600)}
+  }finally{URL.revokeObjectURL(u)}}
 async function addFiles(files){
   const fs=[...files].filter(f=>f.type.startsWith('image/'));if(!fs.length)return;
-  const r=(await Promise.all(fs.map(readImg))).filter(Boolean);
-  if($('#modal').classList.contains('show')&&$('#pth')){if(editing)pending=[];pending.push(...r);if(editing)pending=pending.slice(0,1);drawThumbs()}
-  else{pending=r;postModal(null,true)}}
+  toast('Đang xử lý ảnh…');const r=[];
+  for(const f of fs){try{const p=await proc(f);p.name=f.name||'ảnh';r.push(p)}catch(e){}}   // tuần tự: tiết kiệm RAM
+  if(r.length<fs.length)toast(`${fs.length-r.length} ảnh không đọc được`);
+  if(!r.length)return;
+  if($('#modal').classList.contains('show')&&$('#pth')){if(editing)pending=r.slice(0,1);else pending.push(...r);drawThumbs()}
+  else{closeLb();pending=r;postModal(null,true)}}
 function drawThumbs(){
-  const c=editing&&db.cards.find(x=>x.id===editing),l=pending.length?pending:(c&&c.img?[c]:[]);
-  $('#pth').innerHTML=l.map(p=>`<img src="${p.img}" alt="">`).join('')}
+  tmpU.forEach(u=>URL.revokeObjectURL(u));tmpU=[];
+  const c=editing&&cards.find(x=>x.id===editing),l=pending.length?pending.map(p=>p.thumb):(c&&c.thumb?[c.thumb]:[]);
+  $('#pth').innerHTML=l.map(b=>{const u=URL.createObjectURL(b);tmpU.push(u);return`<img src="${u}" alt="">`}).join('')}
 function postModal(id,keep){
-  if(!db.folders.length){toast('Hãy tạo một thư mục trước');folderModal(null,null);return}
+  if(!folders.length){toast('Hãy tạo một thư mục trước');folderModal(null,null);return}
   if(!keep)pending=[];editing=id||null;
-  const c=id&&db.cards.find(x=>x.id===id),fv=c?c.folder:(state.sel||db.folders[0].id);
-  openModal(`<div class="dlg"><h2 class="hd text-lg font-bold">${c?'Sửa thẻ':'Đăng thẻ mới'}</h2>
+  const c=id&&cards.find(x=>x.id===id),fv=c?c.folder:(st.sel||folders[0].id);
+  openModal(`<div class="dlg"><h2>${c?'Sửa thẻ':'Đăng thẻ mới'}</h2>
   <label class="lb">Tiêu đề</label><input id="pt" value="${esc(c?c.title:'')}">
   <label class="lb">Ghi chú</label><textarea id="pn" rows="3">${esc(c?c.note:'')}</textarea>
   <label class="lb">Thư mục</label><select id="pf">${flat().map(({f,d})=>`<option value="${f.id}" ${f.id===fv?'selected':''}>${'\u00A0'.repeat(d*3)}${d?'└ ':''}${esc(f.name)}</option>`).join('')}</select>
-  <label class="lb">Ảnh ${c?'(chọn để thay ảnh)':'(có thể chọn nhiều)'}</label><button class="btn" onclick="$('#fileIn').click()">🖼 Chọn ảnh</button><div class="thumbs" id="pth"></div>
-  <div class="flex justify-end gap-2 mt-4"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn pri" onclick="savePost('${id||''}')">Lưu</button></div></div>`);
+  <label class="lb">Ảnh ${c?'(chọn để thay ảnh)':'(có thể chọn nhiều)'}</label><button class="btn" data-a="pick">🖼 Chọn ảnh</button><div class="thumbs" id="pth"></div>
+  <div class="foot"><button class="btn" data-a="mclose">Hủy</button><button class="btn pri" data-a="psave" data-id="${id||''}">Lưu</button></div></div>`);
   drawThumbs();setTimeout(()=>$('#pt')&&$('#pt').focus(),30)}
-function savePost(id){
+async function savePost(id){
   const t=$('#pt').value.trim(),n=$('#pn').value.trim(),f=$('#pf').value,now=Date.now();
-  if(id){const c=db.cards.find(x=>x.id===id);Object.assign(c,{title:t||c.title,note:n,folder:f});if(pending[0]){c.img=pending[0].img;c.name=pending[0].name}}
-  else{
-    if(!t&&!pending.length){toast('Nhập tiêu đề hoặc chọn ảnh');return}
-    if(!pending.length)db.cards.push({id:uid(),folder:f,title:t,note:n,img:'',name:'',t:now});
-    pending.forEach((p,i)=>db.cards.push({id:uid(),folder:f,title:t?(pending.length>1?`${t} ${i+1}`:t):p.name.replace(/\.\w+$/,''),note:n,img:p.img,name:p.name,t:now+i}))}
-  save();closeModal();render();toast('Đã lưu thẻ')}
-function delCard(id){
+  try{
+    if(id){const c=cards.find(x=>x.id===id);if(!c)return closeModal();
+      const nc={...c,title:t||c.title,note:n,folder:f},ops=[],p=pending[0];
+      if(p){Object.assign(nc,{thumb:p.thumb,w:p.w,h:p.h,name:p.name});ops.push(['blobs','put',{id,full:p.full}])}
+      nc.k=kOf(nc);ops.push(['cards','put',nc]);await W(ops);if(p)drop(id);Object.assign(c,nc)}
+    else{if(!t&&!pending.length)return toast('Nhập tiêu đề hoặc chọn ảnh');
+      const len=pending.length,added=[],ops=[];
+      const mk=(p,i)=>{const c={id:uid(),folder:f,title:t?(len>1?`${t} ${i+1}`:t):(p?p.name.replace(/\.\w+$/,''):''),note:n,name:p?p.name:'',t:now+(len-i)};
+        if(p)Object.assign(c,{thumb:p.thumb,w:p.w,h:p.h});c.k=kOf(c);added.push(c);ops.push(['cards','put',c]);if(p)ops.push(['blobs','put',{id:c.id,full:p.full}])};
+      len?pending.forEach(mk):mk(null,0);await W(ops);cards.push(...added)}
+  }catch(e){return fail()}
+  closeModal();render();toast('Đã lưu thẻ')}
+async function delCard(id){
   if(!confirm('Xóa thẻ này?'))return;
-  db.cards=db.cards.filter(c=>c.id!==id);save();closeLb();render();toast('Đã xóa thẻ')}
+  try{await W([['cards','delete',id],['blobs','delete',id]])}catch(e){return fail()}
+  drop(id);cards=cards.filter(c=>c.id!==id);closeLb();render();toast('Đã xóa thẻ')}
 
-/* ============ 6. LIGHTBOX ============ */
-function openLb(i){lbList=vis();lbI=i;drawLb()}
-function drawLb(){
-  const c=lbList[lbI];if(!c)return closeLb();
-  $('#lb').classList.add('show');
-  $('#lb').innerHTML=`<div class="lbx"><div class="pic">${c.img?`<img src="${c.img}" alt="${esc(c.title)}">`:'<div class="p-8" style="color:#fff">Thẻ không có ảnh</div>'}</div>
-  <div class="p-5 flex flex-col gap-2"><h2 class="hd text-xl font-bold">${esc(c.title)}</h2>
-  ${c.note?`<div style="white-space:pre-wrap;color:var(--tx2)">${esc(c.note)}</div>`:''}
-  <div><span class="chip">📁 ${esc(path(c.folder).map(x=>x.name).join(' / '))}</span></div>
-  <div><span class="chip">🕒 ${new Date(c.t).toLocaleString('vi-VN')}</span></div>
-  <div class="flex gap-2 mt-auto pt-3 flex-wrap"><button class="btn" onclick="closeLb();postModal('${c.id}')">✎ Sửa</button><button class="btn bad" onclick="delCard('${c.id}')">🗑 Xóa</button><button class="btn" onclick="closeLb()">Đóng</button></div></div></div>
-  <button class="nav" style="left:12px" aria-label="Trước" onclick="lbGo(-1)">‹</button><button class="nav" style="right:12px" aria-label="Sau" onclick="lbGo(1)">›</button>`}
-function lbGo(d){if(!lbList.length)return;lbI=(lbI+d+lbList.length)%lbList.length;drawLb()}
-function closeLb(){$('#lb').classList.remove('show');$('#lb').innerHTML=''}
+/* ===== 7. Lightbox (nạp ảnh đầy đủ khi mở) ===== */
+const revLb=()=>{if(lbUrl)URL.revokeObjectURL(lbUrl);lbUrl=null};
+function openLb(id){lbList=vis();lbI=Math.max(0,lbList.findIndex(c=>c.id===id));drawLb()}
+async function drawLb(){
+  const c=lbList[lbI];if(!c)return closeLb();const tok=++lbTok;revLb();
+  const L=$('#lb');L.classList.add('show');
+  L.innerHTML=`<div class="lbx"><div class="pic">${c.thumb?`<img id="lbimg" src="${turl(c)}" alt="${esc(c.title)}">`:'<div style="color:#fff;padding:32px">Thẻ không có ảnh</div>'}</div>
+  <div class="info"><h2>${esc(c.title)}</h2>${c.note?`<div style="white-space:pre-wrap;color:var(--tx2)">${esc(c.note)}</div>`:''}
+  <div><span class="chip">📁 ${esc(path(c.folder).map(x=>x.name).join(' / '))}</span></div><div><span class="chip">🕒 ${new Date(c.t).toLocaleString('vi-VN')}</span></div>
+  <div class="foot"><button class="btn" data-a="lbedit" data-id="${c.id}">✎ Sửa</button><button class="btn bad" data-a="cdel" data-id="${c.id}">🗑 Xóa</button><button class="btn" data-a="lbclose">Đóng</button></div></div></div>
+  <button class="nav" style="left:12px" aria-label="Trước" data-a="prev">‹</button><button class="nav" style="right:12px" aria-label="Sau" data-a="next">›</button>`;
+  if(!c.thumb)return;
+  try{const r=await R('blobs',c.id);if(tok===lbTok&&r&&r.full){lbUrl=URL.createObjectURL(r.full);const im=$('#lbimg');if(im)im.src=lbUrl}}catch(e){}}
+const lbGo=d=>{if(!lbList.length)return;lbI=(lbI+d+lbList.length)%lbList.length;drawLb()};
+function closeLb(){lbTok++;revLb();$('#lb').classList.remove('show');$('#lb').innerHTML=''}
 
-/* ============ 7. DỮ LIỆU MẪU ============ */
-function svg(w,h,a,b,t){return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><text x="50%" y="50%" fill="#fff" font-size="${Math.round(w/11)}" font-family="sans-serif" font-weight="700" text-anchor="middle" dominant-baseline="middle">${t}</text></svg>`)}
-function clearSample(q){
-  const ids=new Set(db.folders.filter(f=>f.s).flatMap(f=>[f.id,...desc(f.id)]));
-  db.folders=db.folders.filter(f=>!ids.has(f.id));db.cards=db.cards.filter(c=>!c.s&&!ids.has(c.folder));
-  if(state.sel&&ids.has(state.sel))state.sel=null;
-  if(q===true)return;save();savePref();render();toast('Đã xóa dữ liệu mẫu')}
-function seedSample(){
-  clearSample(true);
-  const F=(n,i,p)=>{const f={id:uid(),name:n,icon:i,parent:p,s:1};db.folders.push(f);return f.id};
+/* ===== 8. Dữ liệu mẫu, sao lưu, chuyển dữ liệu cũ ===== */
+const svgU=(w,h,a,b,t)=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><text x="50%" y="50%" fill="#fff" font-size="${Math.round(w/11)}" font-family="sans-serif" font-weight="700" text-anchor="middle" dominant-baseline="middle">${esc(t)}</text></svg>`);
+const d2b=async u=>(await fetch(u)).blob();
+const b2d=b=>new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(b)});
+async function clearSample(q){
+  index();const ids=new Set(folders.filter(f=>f.s).flatMap(f=>[f.id,...desc(f.id)])),del=cards.filter(c=>c.s||ids.has(c.folder)),mine=del.filter(c=>!c.s).length;
+  if(!ids.size&&!del.length)return q===true?0:toast('Không có dữ liệu mẫu');
+  if(q!==true&&mine&&!confirm(`Có ${mine} thẻ của bạn nằm trong thư mục mẫu và sẽ bị xóa theo. Tiếp tục?`))return;
+  await W([...[...ids].map(i=>['folders','delete',i]),...del.flatMap(c=>[['cards','delete',c.id],['blobs','delete',c.id]])]);
+  const ds=new Set(del);del.forEach(c=>drop(c.id));folders=folders.filter(f=>!ids.has(f.id));cards=cards.filter(c=>!ds.has(c));
+  ids.forEach(i=>delete openF[i]);if(ids.has(st.sel))st.sel=null;
+  if(q!==true){savePref();render();toast('Đã xóa dữ liệu mẫu')}}
+async function seed(){
+  await clearSample(true);const nf=[],nc=[],ops=[];
+  const F=(name,icon,parent)=>{const f={id:uid(),name,icon,parent,s:1};nf.push(f);ops.push(['folders','put',f]);return f.id};
   const vn=F('Du lịch','✈️',null),dl=F('Đà Lạt','🌲',vn),ha=F('Hội An','🏮',vn),an=F('Ẩm thực','🍜',null),de=F('Thiết kế','🎨',null);
-  const C=(f,t,n,w,h,a,b)=>db.cards.push({id:uid(),folder:f,title:t,note:n,img:svg(w,h,a,b,t),name:t+'.svg',t:Date.now()-db.cards.length*1000,s:1});
-  C(dl,'Đồi chè Cầu Đất','Bình minh trên đồi chè, sương còn phủ mỏng.',600,800,'#10B981','#065F46');
-  C(dl,'Hồ Xuân Hương','Đạp xe quanh hồ buổi chiều.',800,600,'#6366F1','#312E81');
-  C(ha,'Phố đèn lồng','Đêm Hội An lung linh.',600,900,'#F59E0B','#B45309');
-  C(ha,'Chùa Cầu','Biểu tượng của phố cổ.',800,560,'#EF4444','#7F1D1D');
-  C(an,'Bún bò Huế','Nước dùng đậm đà, thêm chút mắm ruốc.',700,700,'#F97316','#9A3412');
-  C(an,'Cà phê muối','Ngọt, mặn, béo – uống một lần là nghiện.',600,760,'#92400E','#451A03');
-  C(de,'Bảng màu Indigo','Palette cho dự án mới.',800,500,'#818CF8','#4338CA');
-  C(de,'Mockup ứng dụng','Ý tưởng giao diện bản đầu.',640,860,'#EC4899','#831843');
-  db.open[vn]=true;save();render();toast('Đã khôi phục dữ liệu mẫu')}
+  const S=[[dl,'Đồi chè Cầu Đất','Bình minh trên đồi chè, sương còn phủ mỏng.',600,800,'#10B981','#065F46'],[dl,'Hồ Xuân Hương','Đạp xe quanh hồ buổi chiều.',800,600,'#6366F1','#312E81'],
+    [ha,'Phố đèn lồng','Đêm Hội An lung linh.',600,900,'#F59E0B','#B45309'],[ha,'Chùa Cầu','Biểu tượng của phố cổ.',800,560,'#EF4444','#7F1D1D'],
+    [an,'Bún bò Huế','Nước dùng đậm đà, thêm chút mắm ruốc.',700,700,'#F97316','#9A3412'],[an,'Cà phê muối','Ngọt, mặn, béo – uống một lần là nghiện.',600,760,'#92400E','#451A03'],
+    [de,'Bảng màu Indigo','Palette cho dự án mới.',800,500,'#818CF8','#4338CA'],[de,'Mockup ứng dụng','Ý tưởng giao diện bản đầu.',640,860,'#EC4899','#831843']];
+  let i=0;for(const[f,t,n,w,h,a,b]of S){const p=await proc(await d2b(svgU(w,h,a,b,t)));
+    const c={id:uid(),folder:f,title:t,note:n,name:t+'.svg',t:Date.now()-(i++)*1000,s:1,thumb:p.thumb,w:p.w,h:p.h};c.k=kOf(c);nc.push(c);ops.push(['cards','put',c],['blobs','put',{id:c.id,full:p.full}])}
+  await W(ops);folders.push(...nf);cards.push(...nc);openF[vn]=true;savePref();render();toast('Đã khôi phục dữ liệu mẫu')}
+async function doExport(){
+  toast('Đang tạo bản sao lưu…');const out=[];
+  for(const c of cards){const r=await R('blobs',c.id).catch(()=>null),{thumb,k,...m}=c;out.push({...m,img:r&&r.full?await b2d(r.full):''})}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({v:2,folders,cards:out})],{type:'application/json'}));
+  a.download=`padlettree-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e4);toast('Đã xuất sao lưu')}
+async function doImport(file){
+  try{const d=JSON.parse(await file.text());if(!Array.isArray(d.folders)||!Array.isArray(d.cards))throw 0;toast('Đang nhập dữ liệu…');
+    const ops=d.folders.map(f=>['folders','put',f]),nc=[];
+    for(const c of d.cards){const{img,...m}=c;if(img){const p=await proc(await d2b(img));Object.assign(m,{thumb:p.thumb,w:p.w,h:p.h});ops.push(['blobs','put',{id:m.id,full:p.full}])}
+      m.k=kOf(m);nc.push(m);ops.push(['cards','put',m])}
+    await W(ops);const fi=new Set(d.folders.map(f=>f.id)),ci=new Set(nc.map(c=>c.id));
+    cards.forEach(c=>ci.has(c.id)&&drop(c.id));folders=[...folders.filter(f=>!fi.has(f.id)),...d.folders];cards=[...cards.filter(c=>!ci.has(c.id)),...nc];
+    render();toast(`Đã nhập ${nc.length} thẻ`)}catch(e){toast('File sao lưu không hợp lệ')}}
+async function migrate(){   // chuyển dữ liệu localStorage (bản cũ) sang IndexedDB
+  const raw=localStorage.getItem(OLD);if(!raw)return false;let d;try{d=JSON.parse(raw)}catch(e){return false}
+  if(!d||!Array.isArray(d.folders))return false;toast('Đang chuyển dữ liệu cũ sang kho mới…');
+  const ops=d.folders.map(f=>['folders','put',f]),nc=[];
+  for(const c of d.cards||[]){const{img,...m}=c;try{if(img){const p=await proc(await d2b(img));Object.assign(m,{thumb:p.thumb,w:p.w,h:p.h});ops.push(['blobs','put',{id:m.id,full:p.full}])}}catch(e){}
+    m.k=kOf(m);nc.push(m);ops.push(['cards','put',m])}
+  await W(ops);if(d.open&&typeof d.open==='object')openF=Object.assign(d.open,openF);folders=d.folders;cards=nc;localStorage.removeItem(OLD);savePref();return true}
 
-/* ============ 8. KHỞI TẠO ============ */
-let dc=0;
-addEventListener('dragenter',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){dc++;$('#ov').style.display='grid'}});
-addEventListener('dragleave',()=>{if(--dc<=0){dc=0;$('#ov').style.display='none'}});
-addEventListener('dragover',e=>e.preventDefault());
-addEventListener('drop',e=>{e.preventDefault();dc=0;$('#ov').style.display='none';if(e.dataTransfer)addFiles(e.dataTransfer.files)});
-addEventListener('paste',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.clipboardData)addFiles(e.clipboardData.files)});
+/* ===== 9. Sự kiện (event delegation) ===== */
+const A={
+  sel:id=>selectFolder(id||null),tog:id=>{openF[id]=!openF[id];savePref();renderTree()},
+  fnew:id=>folderModal(null,id||null),fedit:id=>folderModal(id),fdel:delFolder,fsave:(id,el)=>saveFolder(id,el.dataset.p),
+  ic:(_,el)=>{document.querySelectorAll('#fic .ic').forEach(x=>x.classList.remove('on'));el.classList.add('on')},
+  pnew:()=>postModal(),cedit:id=>postModal(id),cdel:delCard,psave:id=>savePost(id),pick:()=>$('#fileIn').click(),mclose:closeModal,
+  open:openLb,lbedit:id=>{closeLb();postModal(id)},lbclose:closeLb,prev:()=>lbGo(-1),next:()=>lbGo(1),
+  lay:(_,el)=>{st.layout=el.dataset.lay;lim=60;savePref();renderBoard();syncUI()},theme:toggleTheme,menu:()=>toggleSide(true),scrim:()=>toggleSide(false),
+  export:doExport,import:()=>$('#impIn').click(),sample:()=>seed().catch(fail),nosample:()=>clearSample().catch(fail)};
+document.addEventListener('mousedown',e=>{md=e.target});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('details'))document.querySelectorAll('details[open]').forEach(d=>d.open=false);
+  const el=e.target.closest('[data-a]');
+  if(!el){if(e.target.id==='modal'&&md===e.target)closeModal();if(e.target.id==='lb'&&md===e.target)closeLb();return}
+  const dt=el.closest('details');if(dt)dt.open=false;
+  const f=A[el.dataset.a];if(f)f(el.dataset.id,el)});
+$('#q').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{st.q=e.target.value;lim=60;renderBoard()},120)});
+$('#subChk').addEventListener('change',e=>{st.sub=e.target.checked;lim=60;savePref();render()});
+$('#fileIn').addEventListener('change',function(){addFiles(this.files);this.value=''});
+$('#impIn').addEventListener('change',function(){if(this.files[0])doImport(this.files[0]);this.value=''});
 addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeModal();closeLb()}
-  if($('#lb').classList.contains('show')){if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1)}});
-$('#modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
-$('#lb').onclick=e=>{if(e.target.id==='lb')closeLb()};
-$('#fileIn').onchange=function(){addFiles(this.files);this.value=''};
+  if(e.key==='Escape'){closeModal();closeLb();return}
+  if(e.key==='Enter'){if(e.target.id==='fn'){const b=$('[data-a="fsave"]');b&&b.click()}else if(e.target.classList&&e.target.classList.contains('card'))openLb(e.target.dataset.id)}
+  if($('#lb').classList.contains('show')&&!$('#modal').classList.contains('show')){if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1)}});
+const hasFiles=e=>!!(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')),hideOv=()=>{dc=0;$('#ov').style.display='none'};
+addEventListener('dragenter',e=>{if(hasFiles(e)){dc++;$('#ov').style.display='grid'}});
+addEventListener('dragleave',()=>{if(--dc<=0)hideOv()});
+addEventListener('dragover',e=>{if(hasFiles(e)){e.preventDefault();e.dataTransfer.dropEffect='copy'}});
+addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();hideOv();addFiles(e.dataTransfer.files)});
+addEventListener('dragend',hideOv);
+addEventListener('mousemove',()=>{if(dc)hideOv()});
+addEventListener('paste',e=>{if(/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))return;if(e.clipboardData&&e.clipboardData.files.length)addFiles(e.clipboardData.files)});
 
-load();
-document.documentElement.classList.toggle('dark',state.dark);
-if(!db.folders.length&&!localStorage.getItem(KEY))seedSample();
-else render();
+/* ===== 10. Khởi tạo ===== */
+(async()=>{
+  loadPref();document.documentElement.classList.toggle('dark',st.dark);
+  try{D=await idb()}catch(e){toast('Trình duyệt không hỗ trợ IndexedDB');return}
+  navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+  try{[folders,cards]=await Promise.all([R('folders'),R('cards')]);cards.forEach(c=>c.k=kOf(c));
+    if(!folders.length&&!cards.length&&!await migrate()&&!localStorage.getItem(SEEDED)){localStorage.setItem(SEEDED,'1');await seed()}
+  }catch(e){toast('Lỗi tải dữ liệu')}
+  if(st.sel&&!folders.some(f=>f.id===st.sel))st.sel=null;
+  render()})();
 </script>
 </body>
 </html>
